@@ -34,12 +34,10 @@ class CNN(nn.Module):
         x = self.cnn(src)[None, ...]
 
         # x = torch.permute(x, (2, 0, 1))
-        print(x.size())
-
         
-        _,hidden = self.encoderlstm(x)
+        x,hidden = self.encoderlstm(x)
 
-        x,hidden = self.decoderlstm(0, hidden)
+        x,hidden = self.decoderlstm(x, hidden)
         out = torch.zeros((self.maxlinelen, 257))
         out[0] = x
 
@@ -47,4 +45,4 @@ class CNN(nn.Module):
             x,hidden = self.decoderlstm(x,hidden)
             out[i]=x
 
-        return 
+        return out

@@ -1,3 +1,4 @@
+import imp
 from statistics import mode
 from model import CNN
 from trdg.generators import (
@@ -9,11 +10,11 @@ from trdg.generators import (
 import torch
 import torch.nn as nn
 from torchvision import transforms
-
+from tqdm import tqdm
 
 
 images = GeneratorFromRandom(
-    count=1000,
+    count=60000,
     random_blur=True,
     random_skew=True,
     is_handwritten=True
@@ -26,7 +27,11 @@ model = CNN(maxlinelen=maxseqlen)
 optim = torch.optim.SGD(model.parameters(), lr=0.01)
 criterion = nn.CrossEntropyLoss(ignore_index=0)
 
-for img, lbl in images:
+pbar = tqdm(images)
+
+i=1
+running_loss=0
+for img, lbl in pbar:
     optim.zero_grad()
 
     target = torch.LongTensor([ord(char)+1 for char in lbl] + [0 for i in range(len([ord(char)+1 for char in lbl]), maxseqlen)])
@@ -41,3 +46,9 @@ for img, lbl in images:
     loss.backward()
     optim.step()
     
+    running_loss += loss.item()
+
+    pbar.set_description("loss:{:.4f}".format(running_loss/(i)))
+
+    
+    i+=1
