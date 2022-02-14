@@ -10,9 +10,12 @@ import torch
 import torch.nn as nn
 from torchvision import transforms
 from tqdm import tqdm
+from fastai.vision.all import show_image
+
 
 
 images = GeneratorFromRandom(
+    length=10,
     count=60000,
     random_blur=True,
     random_skew=True,
