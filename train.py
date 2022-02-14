@@ -22,9 +22,14 @@ images = GeneratorFromRandom(
     is_handwritten=True
 )
 
+device = "cpu"
+
 maxseqlen=100
 
 model = CNN(maxlinelen=maxseqlen)
+
+if device=="cuda":
+    model.cuda()
 
 optim = torch.optim.SGD(model.parameters(), lr=0.01)
 criterion = nn.CrossEntropyLoss(ignore_index=0)
@@ -36,11 +41,11 @@ running_loss=0
 for img, lbl in pbar:
     optim.zero_grad()
 
-    target = torch.LongTensor([ord(char)+1 for char in lbl] + [0 for i in range(len([ord(char)+1 for char in lbl]), maxseqlen)])
-    converter = transforms.ToTensor()
+    target = torch.LongTensor([ord(char)+1 for char in lbl] + [0 for i in range(len([ord(char)+1 for char in lbl]), maxseqlen)]).to(device)
+    converter = transforms.ToTensor().to(device)
 
     input = converter(img)[None, ...]
-    input = torch.permute(input, (0, 2, 1, 3))
+    input = torch.permute(input, (0, 2, 1, 3)).to(device)
 
     output = model(input)
 
