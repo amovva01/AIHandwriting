@@ -27,22 +27,29 @@ class CNN(nn.Module):
             nn.ReLU(),
             nn.Linear(512, 128)
         )
-        self.encoderlstm = nn.LSTM(128, 257, num_layers=4)
-        self.decoderlstm = nn.LSTM(257, 257, num_layers=4)
+        self.encode = nn.LSTM(128, 257, bidirectional=True)
+        self.decode = nn.LSTM(257, 257, bidirectional=True)
+        self.linear = nn.Linear(514, 257)
+        
         self.maxlinelen=maxlinelen
     def forward(self, src):
         x = self.cnn(src)[None, ...]
 
         # x = torch.permute(x, (2, 0, 1))
         
-        x,hidden = self.encoderlstm(x)
+        x,hidden = self.encode(x)
+        x = self.linear(x)
 
-        x,hidden = self.decoderlstm(x, hidden)
+        x,hidden = self.decode(x, hidden)
+        x = self.linear(x)
+
         out = torch.zeros((self.maxlinelen, 257))
         out[0] = x
 
         for i in range(1,self.maxlinelen):
-            x,hidden = self.decoderlstm(x,hidden)
+            x,hidden = self.decode(x,hidden)
+            x = self.linear(x)
+
             out[i]=x
 
         return out

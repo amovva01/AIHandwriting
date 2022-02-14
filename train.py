@@ -1,4 +1,3 @@
-import imp
 from statistics import mode
 from model import CNN
 from trdg.generators import (
