@@ -27,7 +27,8 @@ class CNN(nn.Module):
         
         self.maxlinelen=maxlinelen
     def forward(self, src):
-        x = self.cnn(src)[None, ...]
+        x = self.cnn(src)
+        x = x[None, :]
 
         # x = torch.permute(x, (2, 0, 1))
         

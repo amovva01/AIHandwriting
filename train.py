@@ -36,31 +36,37 @@ for epoch in range(1, 10):
     i=1
     running_loss=0
     for item in pbar:
+        torch.cuda.empty_cache()
 
         target = item["label"]
-        input = item["image"]
+        inputs = item["image"]
 
-        optim.zero_grad()
 
         a = torch.zeros(maxseqlen)
         target = torch.LongTensor(target)
         a[:target.size(0)] = target
         target = a.type(torch.LongTensor).to(device)
 
-        input = input.to(device)
+        inputs = inputs.to(device)
 
-        output = model(input)
 
-        output=output.to("cuda")
-        loss = criterion(output, target)
-        loss.backward()
-        optim.step()
-        
-        running_loss += loss.item()
+        try:
+            output = model(inputs)
 
-        pbar.set_description("loss:{:.4f}".format(running_loss/(i)))
+            output=output.to("cuda")
+            loss = criterion(output, target)
+            loss.backward()
+            optim.step()
 
-        i+=1
+            optim.zero_grad()
 
-        torch.cuda.empty_cache()
+            
+            running_loss += loss.item()
+
+            pbar.set_description("loss:{:.4f}".format(running_loss/(i)))
+
+            i+=1
+        except:
+            print("Crashed, input size: ",inputs.size())
+
     torch.save(model, "saves/model.pth")
