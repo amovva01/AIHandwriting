@@ -5,7 +5,7 @@ class CNN(nn.Module):
     def __init__(self, maxlinelen) -> None:
         super().__init__()
         self.cnn = nn.Sequential(
-            nn.Conv2d(3, 6, kernel_size=3),
+            nn.Conv2d(1, 6, kernel_size=3),
             nn.ReLU(),
             nn.Conv2d(6, 32, kernel_size=5),
             nn.ReLU(),

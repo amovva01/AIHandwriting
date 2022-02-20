@@ -1,26 +1,18 @@
-from statistics import mode
+from data import IAMDataset
 from model import CNN
-from trdg.generators import (
-    GeneratorFromDict,
-    GeneratorFromRandom,
-    GeneratorFromStrings,
-    GeneratorFromWikipedia,
-)
+import os
 import torch
 import torch.nn as nn
+import torch.utils.data as data
 from torchvision import transforms
 from tqdm import tqdm
 from fastai.vision.all import show_image
 
 
-
-images = GeneratorFromRandom(
-    length=10,
-    count=60000,
-    random_blur=True,
-    random_skew=True,
-    is_handwritten=True
-)
+print("Loading dataset from data folder")
+dataset = IAMDataset()
+dataloader = data.DataLoader(dataset, batch_size=1, shuffle=True)
+print("Loaded data!")
 
 device = "cuda"
 
@@ -28,6 +20,8 @@ maxseqlen=100
 
 model = CNN(maxlinelen=maxseqlen)
 
+if os.path.exists("saves/model.pth"):
+    model = torch.load("saves/model.pth")
 
 model.cuda()
 
@@ -36,30 +30,37 @@ print(next(model.parameters()).device)
 optim = torch.optim.SGD(model.parameters(), lr=0.01)
 criterion = nn.CrossEntropyLoss(ignore_index=0).cuda()
 
-pbar = tqdm(images)
+pbar = tqdm(dataloader)
 
-i=1
-running_loss=0
-for img, lbl in pbar:
-    optim.zero_grad()
+for epoch in range(1, 10):
+    i=1
+    running_loss=0
+    for item in pbar:
 
-    target = torch.LongTensor([ord(char)+1 for char in lbl] + [0 for i in range(len([ord(char)+1 for char in lbl]), maxseqlen)]).to(device)
-    converter = transforms.ToTensor()
+        target = item["label"]
+        input = item["image"]
 
-    input = converter(img)[None, ...]
-    input = torch.permute(input, (0, 1, 2, 3)).to(device)
+        optim.zero_grad()
 
-    print(input.size())
-    output = model(input)
+        a = torch.zeros(maxseqlen)
+        target = torch.LongTensor(target)
+        a[:target.size(0)] = target
+        target = a.type(torch.LongTensor).to(device)
 
-    output=output.to("cuda")
-    loss = criterion(output, target)
-    loss.backward()
-    optim.step()
-    
-    running_loss += loss.item()
+        input = input.to(device)
 
-    pbar.set_description("loss:{:.4f}".format(running_loss/(i)))
+        output = model(input)
 
-    
-    i+=1
+        output=output.to("cuda")
+        loss = criterion(output, target)
+        loss.backward()
+        optim.step()
+        
+        running_loss += loss.item()
+
+        pbar.set_description("loss:{:.4f}".format(running_loss/(i)))
+
+        i+=1
+
+        torch.cuda.empty_cache()
+    torch.save(model, "saves/model.pth")
