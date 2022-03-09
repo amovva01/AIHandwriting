@@ -1,5 +1,5 @@
 from data import IAMDataset
-from model import CNN
+from model import HTR
 import os
 import torch
 import torch.nn as nn
@@ -18,7 +18,7 @@ device = "cuda"
 
 maxseqlen=100
 
-model = CNN(maxlinelen=maxseqlen)
+model = HTR(256, 8, 6, 6, maxlinelen=100)
 
 if os.path.exists("saves/model.pth"):
     model = torch.load("saves/model.pth")
@@ -30,30 +30,25 @@ print(next(model.parameters()).device)
 optim = torch.optim.SGD(model.parameters(), lr=0.01)
 criterion = nn.CrossEntropyLoss(ignore_index=0).cuda()
 
-pbar = tqdm(dataloader)
+for epoch in range(1, 100):
+    print("Next epoch starting:", epoch)
+    pbar = tqdm(dataloader)
 
-for epoch in range(1, 10):
     i=1
     running_loss=0
     for item in pbar:
-        torch.cuda.empty_cache()
-
-        target = item["label"]
-        inputs = item["image"]
-
-
-        a = torch.zeros(maxseqlen)
-        target = torch.LongTensor(target)
-        a[:target.size(0)] = target
-        target = a.type(torch.LongTensor).to(device)
-
-        inputs = inputs.to(device)
-
 
         try:
-            output = model(inputs)
+            target = item["label"]
+            inputs = item["image"].cuda()
 
-            output=output.to("cuda")
+
+            a = torch.zeros(maxseqlen)
+            target = torch.LongTensor(target)
+            a[:target.size(0)] = target
+            target = a.type(torch.LongTensor).to(device)
+
+            output = model(inputs).cuda()
             loss = criterion(output, target)
             loss.backward()
             optim.step()
@@ -67,6 +62,8 @@ for epoch in range(1, 10):
 
             i+=1
         except:
-            print("Crashed, input size: ",inputs.size())
+            print("There was an error. Ignoring.")
 
+    print("Saving model:", epoch)
     torch.save(model, "saves/model.pth")
+    print("Model saved")
