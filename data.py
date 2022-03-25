@@ -34,10 +34,10 @@ class IAMDataset(Dataset):
         return len(self.images)
     
     def __getitem__(self, idx):
-        converter = transforms.Compose([ transforms.ToPILImage(),
-                                        transforms.Resize(224),
-                                        transforms.ToTensor()])
-        normalize = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+        # converter = transforms.Compose([ transforms.ToPILImage(),
+        #                                 transforms.Resize(224),
+        #                                 transforms.ToTensor()])
+        # normalize = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
         if torch.is_tensor(idx):
             idx = idx.tolist()
@@ -46,14 +46,14 @@ class IAMDataset(Dataset):
         label = []
         for c in split(self.labels[idx]):
             label.append(ord(c)+1)
-        image = converter(image)[None, ...]
-        image = image.squeeze(0)
-        a = torch.zeros((3, image.size(1), image.size(2)))
-        a[0] = image
-        a[1] = image
-        a[2] = image
+        # image = converter(image)[None, ...]
+        # image = image.squeeze(0)
+        # a = torch.zeros((3, image.size(1), image.size(2)))
+        # a[0] = image
+        # a[1] = image
+        # a[2] = image
 
-        image = normalize(a)
+        # image = normalize(a)
 
     
         item = {'label': label, 'image': image}
